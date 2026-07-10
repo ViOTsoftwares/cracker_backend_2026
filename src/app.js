@@ -45,6 +45,9 @@ app.use(
 app.use("/image", express.static(path.join(__dirname, "./uploads")));
 app.use("/api/admin", adminRouter);
 app.use("/api/public", publicRouter);
+app.use("/health", (req, res) => {
+  res.status(200).json({ message: "OK", status: "connected" })
+})
 connectDB();
 
 export default app;
