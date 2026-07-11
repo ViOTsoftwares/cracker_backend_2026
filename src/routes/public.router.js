@@ -110,8 +110,8 @@ router.get("/share/product/:slug", async (req, res) => {
     }
 
     // Determine the frontend URL where the app is hosted
-    let frontendUrl = "https://cracker-frontend-2026-theta.vercel.app";
-    if (ENV.ALLOW_ORIGIN) {
+    let frontendUrl = ENV.FRONTEND_URL || "https://cracker-frontend-2026-theta.vercel.app";
+    if (!ENV.FRONTEND_URL && ENV.ALLOW_ORIGIN) {
       const origins = ENV.ALLOW_ORIGIN.split(",").map(o => o.trim());
       const vercelOrigin = origins.find(o => o.includes("vercel.app"));
       if (vercelOrigin) {
@@ -126,7 +126,7 @@ router.get("/share/product/:slug", async (req, res) => {
       }
     }
 
-    const productUrl = `${frontendUrl}/product/${product.slug}`;
+    const productUrl = `${frontendUrl}/products/${product.slug}`;
 
     // Clean description to avoid breaking HTML attributes
     const cleanDesc = product.description

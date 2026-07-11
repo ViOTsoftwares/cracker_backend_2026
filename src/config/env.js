@@ -20,4 +20,5 @@ export const ENV = {
   SMTP_PASS: process.env.SMTP_PASS,
   PORT: process.env.PORT,
   ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
+  FRONTEND_URL: process.env.FRONTEND_URL,
 };
