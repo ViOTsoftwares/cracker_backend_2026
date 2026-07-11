@@ -1,5 +1,6 @@
 import express from "express";
 import { ProductModel, CategoryModel, BannerModel } from "../models/index.js";
+import { ENV } from "../config/env.js";
 
 const router = express.Router();
 
@@ -84,6 +85,81 @@ router.get("/products/:slug", async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// GET /api/public/share/product/:slug
+router.get("/share/product/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const product = await ProductModel.findOne({ slug });
+    if (!product) {
+      return res.status(404).send("Product not found");
+    }
+
+    // Resolve the primary image URL
+    let imageUrl = "";
+    if (product.images && product.images.length > 0) {
+      const primaryImg = product.images[0];
+      if (primaryImg.startsWith("http://") || primaryImg.startsWith("https://")) {
+        imageUrl = primaryImg;
+      } else {
+        const baseUrl = ENV.IMAGE_URL || `${req.protocol}://${req.get("host")}/image`;
+        imageUrl = `${baseUrl}/products/${primaryImg}`;
+      }
+    }
+
+    // Determine the frontend URL where the app is hosted
+    let frontendUrl = "https://cracker-frontend-2026-theta.vercel.app";
+    if (ENV.ALLOW_ORIGIN) {
+      const origins = ENV.ALLOW_ORIGIN.split(",").map(o => o.trim());
+      const vercelOrigin = origins.find(o => o.includes("vercel.app"));
+      if (vercelOrigin) {
+        frontendUrl = vercelOrigin;
+      } else if (origins.length > 0) {
+        const local5173 = origins.find(o => o.includes("5173"));
+        if (local5173) {
+          frontendUrl = local5173;
+        } else {
+          frontendUrl = origins[0];
+        }
+      }
+    }
+
+    const productUrl = `${frontendUrl}/product/${product.slug}`;
+
+    // Clean description to avoid breaking HTML attributes
+    const cleanDesc = product.description
+      ? product.description.replace(/"/g, "&quot;").replace(/\r?\n/g, " ")
+      : "Buy premium fireworks online at CrackersSiva!";
+
+    res.setHeader("Content-Type", "text/html");
+    return res.send(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>${product.name}</title>
+    <!-- Open Graph tags for WhatsApp / Facebook / Twitter rich link previews -->
+    <meta property="og:title" content="${product.name}" />
+    <meta property="og:description" content="${cleanDesc}" />
+    \${imageUrl ? \`<meta property="og:image" content="\${imageUrl}" />\` : ""}
+    <meta property="og:url" content="${productUrl}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CrackersSiva" />
+    
+    <!-- Automatic client redirection to the frontend product page -->
+    <script>
+      window.location.href = "${productUrl}";
+    </script>
+    <meta http-equiv="refresh" content="0;url=${productUrl}" />
+  </head>
+  <body>
+    <p>Redirecting to ${product.name} at CrackersSiva...</p>
+  </body>
+</html>`);
+  } catch (error) {
+    console.error("Error in share route:", error);
+    return res.status(500).send("Something went wrong");
   }
 });
 
