@@ -142,7 +142,7 @@ router.get("/share/product/:slug", async (req, res) => {
     <!-- Open Graph tags for WhatsApp / Facebook / Twitter rich link previews -->
     <meta property="og:title" content="${product.name}" />
     <meta property="og:description" content="${cleanDesc}" />
-    \${imageUrl ? \`<meta property="og:image" content="\${imageUrl}" />\` : ""}
+    ${imageUrl ? `<meta property="og:image" content="${imageUrl}" />` : ""}
     <meta property="og:url" content="${productUrl}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CrackersSiva" />
