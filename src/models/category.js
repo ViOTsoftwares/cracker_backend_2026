@@ -30,24 +30,4 @@ const CategorySchema = new Schema(
   },
 );
 
-import { getImageUrl } from "../lib/imageHelper.js";
-
-CategorySchema.set("toJSON", {
-  transform: (doc, ret) => {
-    if (ret.image) {
-      ret.image = getImageUrl(ret.image, "categories");
-    }
-    return ret;
-  }
-});
-
-CategorySchema.set("toObject", {
-  transform: (doc, ret) => {
-    if (ret.image) {
-      ret.image = getImageUrl(ret.image, "categories");
-    }
-    return ret;
-  }
-});
-
 export default mongoose.model("category", CategorySchema, "category");

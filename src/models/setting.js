@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { getImageUrl } from "../lib/imageHelper.js";
 
 const { Schema } = mongoose;
 
@@ -72,23 +71,5 @@ const SettingSchema = new Schema(
     timestamps: true,
   },
 );
-
-SettingSchema.set("toJSON", {
-  transform: (doc, ret) => {
-    if (ret.logo) {
-      ret.logo = getImageUrl(ret.logo, "logos");
-    }
-    return ret;
-  }
-});
-
-SettingSchema.set("toObject", {
-  transform: (doc, ret) => {
-    if (ret.logo) {
-      ret.logo = getImageUrl(ret.logo, "logos");
-    }
-    return ret;
-  }
-});
 
 export default mongoose.model("setting", SettingSchema, "setting");

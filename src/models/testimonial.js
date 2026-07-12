@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { getImageUrl } from "../lib/imageHelper.js";
 
 const { Schema } = mongoose;
 
@@ -26,23 +25,5 @@ const TestimonialSchema = new Schema(
     timestamps: true,
   },
 );
-
-TestimonialSchema.set("toJSON", {
-  transform: (doc, ret) => {
-    if (ret.logo) {
-      ret.logo = getImageUrl(ret.logo, "logos");
-    }
-    return ret;
-  }
-});
-
-TestimonialSchema.set("toObject", {
-  transform: (doc, ret) => {
-    if (ret.logo) {
-      ret.logo = getImageUrl(ret.logo, "logos");
-    }
-    return ret;
-  }
-});
 
 export default mongoose.model("testimonial", TestimonialSchema, "testimonial");

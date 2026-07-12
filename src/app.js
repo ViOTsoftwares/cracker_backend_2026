@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import adminRouter from "./routes/admin.router.js";
 import publicRouter from "./routes/public.router.js";
+import userRouter from "./routes/user.router.js";
 // Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +46,7 @@ app.use(
 app.use("/image", express.static(path.join(__dirname, "./uploads")));
 app.use("/api/admin", adminRouter);
 app.use("/api/public", publicRouter);
+app.use("/api/user", userRouter);
 app.use("/health", (req, res) => {
   res.status(200).json({ message: "OK", status: "connected" })
 })

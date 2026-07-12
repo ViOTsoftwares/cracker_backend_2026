@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import Admin from "../models/admin.js";
+import { UserModel } from "../models/index.js";
 import { isEmpty } from "../lib/isEmpty.js";
 import { ENV } from "../config/env.js";
 
@@ -36,6 +37,46 @@ export const adminAuthMiddleware = async (req, res, next) => {
   } catch (error) {
     console.error("Auth middleware error:", error);
 
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
+  }
+};
+
+export const userAuthMiddleware = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(" ")[1];
+
+    if (isEmpty(token)) {
+      return res.status(401).json({
+        success: false,
+        message: "Access denied. No token provided",
+      });
+    }
+
+    const decoded = jwt.verify(token, ENV.JWT_SECRET);
+
+    const user = await UserModel.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.status === "inactive") {
+      return res.status(401).json({
+        success: false,
+        message: "Your account is inactive. Please contact support.",
+      });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("User auth middleware error:", error);
     return res.status(401).json({
       success: false,
       message: "Invalid or expired token",

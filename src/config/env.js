@@ -21,4 +21,5 @@ export const ENV = {
   PORT: process.env.PORT,
   ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
   FRONTEND_URL: process.env.FRONTEND_URL,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 };

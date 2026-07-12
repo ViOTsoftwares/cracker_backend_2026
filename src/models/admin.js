@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { getImageUrl } from "../lib/imageHelper.js";
 
 const { Schema } = mongoose;
 
@@ -18,23 +17,5 @@ const AdminSchema = new Schema(
     timestamps: true,
   }
 );
-
-AdminSchema.set("toJSON", {
-  transform: (doc, ret) => {
-    if (ret.profileImage) {
-      ret.profileImage = getImageUrl(ret.profileImage, "profiles");
-    }
-    return ret;
-  }
-});
-
-AdminSchema.set("toObject", {
-  transform: (doc, ret) => {
-    if (ret.profileImage) {
-      ret.profileImage = getImageUrl(ret.profileImage, "profiles");
-    }
-    return ret;
-  }
-});
 
 export default mongoose.model("admin", AdminSchema, "admin");

@@ -37,30 +37,4 @@ const BannerSchema = new Schema(
   },
 );
 
-import { getImageUrl } from "../lib/imageHelper.js";
-
-BannerSchema.set("toJSON", {
-  transform: (doc, ret) => {
-    if (ret.desktopImage) {
-      ret.desktopImage = getImageUrl(ret.desktopImage, "banners");
-    }
-    if (ret.mobileImage) {
-      ret.mobileImage = getImageUrl(ret.mobileImage, "banners");
-    }
-    return ret;
-  }
-});
-
-BannerSchema.set("toObject", {
-  transform: (doc, ret) => {
-    if (ret.desktopImage) {
-      ret.desktopImage = getImageUrl(ret.desktopImage, "banners");
-    }
-    if (ret.mobileImage) {
-      ret.mobileImage = getImageUrl(ret.mobileImage, "banners");
-    }
-    return ret;
-  }
-});
-
 export default mongoose.model("banner", BannerSchema, "banner");

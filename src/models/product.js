@@ -78,7 +78,6 @@ const ProductSchema = new Schema(
         timestamps: true,
     },
 );
-import { getImageUrl } from "../lib/imageHelper.js";
 
 ProductSchema.pre("save", function () {
     if (this.originalPrice && this.offerPrice) {
@@ -87,24 +86,6 @@ ProductSchema.pre("save", function () {
         );
     } else {
         this.discountPercentage = 0;
-    }
-});
-
-ProductSchema.set("toJSON", {
-    transform: (doc, ret) => {
-        if (ret.images && Array.isArray(ret.images)) {
-            ret.images = ret.images.map(img => getImageUrl(img, "products"));
-        }
-        return ret;
-    }
-});
-
-ProductSchema.set("toObject", {
-    transform: (doc, ret) => {
-        if (ret.images && Array.isArray(ret.images)) {
-            ret.images = ret.images.map(img => getImageUrl(img, "products"));
-        }
-        return ret;
     }
 });
 

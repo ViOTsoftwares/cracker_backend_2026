@@ -1,5 +1,5 @@
 import express from "express";
-import { ProductModel, CategoryModel, BannerModel } from "../models/index.js";
+import { ProductModel, CategoryModel, BannerModel, SettingModel } from "../models/index.js";
 import { ENV } from "../config/env.js";
 
 const router = express.Router();
@@ -20,6 +20,17 @@ router.get("/banners", async (req, res) => {
   try {
     const list = await BannerModel.find({ status: "active" }).sort({ sortOrder: 1 });
     return res.status(200).json({ success: true, result: list });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// GET /api/public/settings
+router.get("/settings", async (req, res) => {
+  try {
+    const result = await SettingModel.findOne();
+    return res.status(200).json({ success: true, result });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: "Something went wrong" });
