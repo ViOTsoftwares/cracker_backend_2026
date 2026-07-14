@@ -1,5 +1,5 @@
 import express from "express";
-import { ProductModel, CategoryModel, BannerModel, SettingModel } from "../models/index.js";
+import { ProductModel, CategoryModel, BannerModel, SettingModel, CMSModel } from "../models/index.js";
 import { ENV } from "../config/env.js";
 
 const router = express.Router();
@@ -203,6 +203,21 @@ router.get("/products/related/:slug", async (req, res) => {
       .populate("category", "name slug image")
       .limit(4);
     return res.status(200).json({ success: true, result: related });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// GET /api/public/cms/:identifier
+router.get("/cms/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const page = await CMSModel.findOne({ identifier });
+    if (!page) {
+      return res.status(404).json({ success: false, message: "Page not found" });
+    }
+    return res.status(200).json({ success: true, result: page });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: "Something went wrong" });

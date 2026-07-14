@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { ProductModel } from "../models/index.js";
+import { ProductModel, CategoryModel } from "../models/index.js";
 import { Pagination } from "../lib/pagination.js";
 import { ColumnFilter } from "../lib/columnFilter.js";
 import { ENV } from "../config/env.js";
@@ -234,5 +234,136 @@ export const DeleteProduct = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "Something went wrong" });
+  }
+};
+
+export const ExportProducts = async (req, res) => {
+  try {
+    const list = await ProductModel.find({}).populate("category", "name");
+    return res.status(200).json({
+      success: true,
+      message: "Export all products",
+      result: list,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Something went wrong" });
+  }
+};
+
+export const ImportProducts = async (req, res) => {
+  try {
+    const { products } = req.body;
+    if (!products || !Array.isArray(products)) {
+      return res.status(400).json({ success: false, message: "Invalid product list" });
+    }
+
+    // Get all categories to match by name
+    const categories = await CategoryModel.find({});
+    const categoryMap = new Map(categories.map(c => [c.name.trim().toLowerCase(), c._id]));
+
+    const importedProducts = [];
+    const errors = [];
+
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      const rowNum = i + 2; // Row number in CSV including header
+
+      if (!p.name || !p.name.trim()) {
+        errors.push(`Row ${rowNum}: Name is required`);
+        continue;
+      }
+
+      if (!p.categoryName || !p.categoryName.trim()) {
+        errors.push(`Row ${rowNum}: Category Name is required`);
+        continue;
+      }
+
+      const catId = categoryMap.get(p.categoryName.trim().toLowerCase());
+      if (!catId) {
+        errors.push(`Row ${rowNum}: Category "${p.categoryName}" does not exist. Please create the category first.`);
+        continue;
+      }
+
+      const origPrice = Number(p.originalPrice);
+      const offPrice = Number(p.offerPrice);
+      if (isNaN(origPrice) || origPrice < 0) {
+        errors.push(`Row ${rowNum}: Invalid originalPrice`);
+        continue;
+      }
+      if (isNaN(offPrice) || offPrice < 0) {
+        errors.push(`Row ${rowNum}: Invalid offerPrice`);
+        continue;
+      }
+
+      // Generate slug if not provided, or ensure slug format
+      let slug = p.slug ? p.slug.trim() : "";
+      if (!slug) {
+        slug = p.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)+/g, "");
+      }
+
+      // Ensure slug uniqueness (append random or incremented number if duplicate)
+      let uniqueSlug = slug;
+      let counter = 1;
+      while (await ProductModel.findOne({ slug: uniqueSlug })) {
+        uniqueSlug = `${slug}-${counter}`;
+        counter++;
+      }
+
+      const stockNum = p.stock ? Number(p.stock) : 0;
+      const isFeaturedBool = p.isFeatured === "true" || p.isFeatured === true || String(p.isFeatured).toLowerCase() === "yes" || String(p.isFeatured).toLowerCase() === "true";
+
+      const discountPercentage = origPrice
+        ? Math.round(((origPrice - offPrice) / origPrice) * 100)
+        : 0;
+
+      importedProducts.push({
+        name: p.name.trim(),
+        slug: uniqueSlug,
+        category: catId,
+        brand: p.brand ? p.brand.trim() : "",
+        originalPrice: origPrice,
+        offerPrice: offPrice,
+        discountPercentage,
+        stock: isNaN(stockNum) ? 0 : stockNum,
+        safetyInfo: p.safetyInfo ? p.safetyInfo.trim() : "",
+        notes: p.notes ? p.notes.trim() : "",
+        isFeatured: isFeaturedBool,
+        images: [], // No images uploaded during bulk CSV import
+      });
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Import failed due to validation errors",
+        errors,
+      });
+    }
+
+    if (importedProducts.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No products found to import",
+      });
+    }
+
+    await ProductModel.insertMany(importedProducts);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully imported ${importedProducts.length} products`,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong during import",
+    });
   }
 };

@@ -33,6 +33,7 @@ export const UpdateSetting = async (req, res) => {
       xlink,
       instagramlink,
       facebooklink,
+      deliveryFee,
     } = req.body;
 
     const errors = {};
@@ -112,6 +113,7 @@ export const UpdateSetting = async (req, res) => {
           xlink,
           instagramlink,
           facebooklink,
+          deliveryFee: Number(deliveryFee) || 0,
         },
       );
     } else {
@@ -127,6 +129,7 @@ export const UpdateSetting = async (req, res) => {
         xlink,
         instagramlink,
         facebooklink,
+        deliveryFee: Number(deliveryFee) || 0,
       });
     }
 

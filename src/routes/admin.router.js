@@ -12,6 +12,7 @@ import * as ModuleCrt from "../controllers/module.js";
 import * as EmailTemplateCrt from "../controllers/emailTemplate.js";
 import * as CategoryCrt from "../controllers/category.js";
 import * as BannerCrt from "../controllers/banner.js";
+import * as OrderCrt from "../controllers/order.js";
 
 import { uploadLogo, uploadProduct, uploadCategory, uploadProfileImage, uploadBanner } from "../lib/multer.js";
 
@@ -95,7 +96,13 @@ router
     ProductCrt.UpdateProduct,
   )
   .delete(adminAuthMiddleware, ProductCrt.DeleteProduct);
+router.get("/product/export-all", adminAuthMiddleware, ProductCrt.ExportProducts);
+router.post("/product/import", adminAuthMiddleware, ProductCrt.ImportProducts);
 router.get("/product/:id", adminAuthMiddleware, ProductCrt.OneProduct);
+
+// order
+router.get("/orders", adminAuthMiddleware, OrderCrt.getAllOrdersAdmin);
+router.put("/orders/:id/status", adminAuthMiddleware, OrderCrt.updateOrderStatusAdmin);
 
 // CMS
 router

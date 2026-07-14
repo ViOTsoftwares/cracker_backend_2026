@@ -66,6 +66,11 @@ const SettingSchema = new Schema(
       default: "",
       required: false,
     },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+      required: false,
+    },
   },
   {
     timestamps: true,

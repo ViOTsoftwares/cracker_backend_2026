@@ -1,4 +1,7 @@
-import { OrderModel, ProductModel } from "../models/index.js";
+import { OrderModel, ProductModel, CategoryModel, UserModel, EmailTemplateModel, SettingModel } from "../models/index.js";
+import { Pagination } from "../lib/pagination.js";
+import { ColumnFilter } from "../lib/columnFilter.js";
+import { renderEmailTemplate } from "../lib/mailTemplate.js";
 
 // Helper to generate a unique readable Order ID
 const generateOrderId = () => {
@@ -21,10 +24,13 @@ export const createOrder = async (req, res) => {
     }
 
     const paymentMethodNormalized = paymentMethod || "cod";
+    const setting = await SettingModel.findOne();
+    const deliveryFee = setting?.deliveryFee || 0;
 
     // 1. Process items and verify stock availability
     let subtotal = 0;
     const orderItems = [];
+    let itemsRowsHtml = "";
 
     // Verify stock and calculate price
     for (const item of items) {
@@ -52,11 +58,20 @@ export const createOrder = async (req, res) => {
         quantity: item.quantity,
         price: itemPrice,
       });
+
+      itemsRowsHtml += `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${product.name}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${itemPrice.toLocaleString()}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${(itemPrice * item.quantity).toLocaleString()}</td>
+        </tr>
+      `;
     }
 
     // 2. Create the Order
     const discount = 0; // Can be expanded with coupon code logic
-    const total = subtotal - discount;
+    const total = subtotal + deliveryFee - discount;
     const orderId = generateOrderId();
 
     const order = await OrderModel.create({
@@ -75,10 +90,41 @@ export const createOrder = async (req, res) => {
       subtotal,
       discount,
       total,
+      deliveryFee,
       paymentMethod: paymentMethodNormalized,
       paymentStatus: paymentMethodNormalized === "online" ? "paid" : "pending",
       orderStatus: "pending",
     });
+
+    // 3. Send email confirmation using Database Template
+    try {
+      const templateIdentifier = "ORDER_PROCESSING";
+      const templateExists = await EmailTemplateModel.findOne({ identifier: templateIdentifier });
+      const emailVariables = {
+        orderId,
+        shippingTitle: shippingAddress.title || "Shipping Address",
+        shippingAddressLine1: shippingAddress.addressLine1,
+        shippingAddressLine2: shippingAddress.addressLine2 ? `${shippingAddress.addressLine2}<br />` : "",
+        shippingCity: shippingAddress.city,
+        shippingState: shippingAddress.state,
+        shippingPincode: shippingAddress.pincode,
+        shippingPhone: shippingAddress.phone,
+        itemsHtml: itemsRowsHtml,
+        subtotal: subtotal.toLocaleString("en-IN"),
+        total: total.toLocaleString("en-IN"),
+        deliveryFeeText: deliveryFee > 0 ? `₹${deliveryFee.toLocaleString("en-IN")}` : "FREE",
+        deliveryFeeColor: deliveryFee > 0 ? "#0f172a" : "#10b981",
+      };
+
+      if (req.user && req.user.email) {
+        await renderEmailTemplate(templateIdentifier, req.user.email, emailVariables);
+      }
+      if (process.env.SMTP_USER) {
+        await renderEmailTemplate(templateIdentifier, process.env.SMTP_USER, emailVariables);
+      }
+    } catch (emailError) {
+      console.error("Order template email sending failed:", emailError);
+    }
 
     return res.status(201).json({
       success: true,
@@ -132,6 +178,91 @@ export const getOrderDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("getOrderDetails error:", error);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
+
+// GET /api/admin/orders (Admin only)
+export const getAllOrdersAdmin = async (req, res) => {
+  try {
+    let { page, limit, filter } = req.query;
+    filter = ColumnFilter(filter);
+    const { skip } = Pagination({ page, limit });
+    const sort = { createdAt: -1 };
+
+    // Search by orderId or shipping address phone
+    if (filter && filter.orderId) {
+      filter.orderId = { $regex: filter.orderId, $options: "i" };
+    }
+
+    // Search by customer name
+    if (filter && filter.customer) {
+      const userQuery = filter.customer; // it is a regex object from ColumnFilter
+      const matchedUsers = await UserModel.find({ name: userQuery }).select("_id");
+      const userIds = matchedUsers.map((u) => u._id);
+      filter.user = { $in: userIds };
+      delete filter.customer;
+    }
+
+    // Match orders for the entire day of the selected date
+    if (filter && filter.createdAt) {
+      const targetDate = new Date(filter.createdAt);
+      if (!isNaN(targetDate.getTime())) {
+        const startDate = new Date(targetDate);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(targetDate);
+        endDate.setHours(23, 59, 59, 999);
+        filter.createdAt = { $gte: startDate, $lte: endDate };
+      }
+    }
+
+    const list = await OrderModel.find(filter || {})
+      .populate("user", "name email phone")
+      .populate("items.product", "name")
+      .limit(limit)
+      .skip(skip)
+      .sort(sort);
+
+    const count = await OrderModel.countDocuments(filter || {});
+
+    return res.status(200).json({
+      success: true,
+      message: "Get all orders for admin",
+      result: { list, count },
+    });
+  } catch (error) {
+    console.error("getAllOrdersAdmin error:", error);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
+
+// PUT /api/admin/orders/:id/status (Admin only)
+export const updateOrderStatusAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { orderStatus, paymentStatus } = req.body;
+
+    const order = await OrderModel.findById(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (orderStatus) {
+      order.orderStatus = orderStatus;
+    }
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
+    }
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order status updated successfully",
+      result: order,
+    });
+  } catch (error) {
+    console.error("updateOrderStatusAdmin error:", error);
     return res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };

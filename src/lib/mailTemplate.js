@@ -9,7 +9,8 @@ export const renderEmailTemplate = async (identifier, to, variables = {}) => {
     const COMPANY_NAME = setting.title;
     const SUPPORT_EMAIL = setting.email;
     const CURRENT_YEAR = new Date().getFullYear();
-    variables = { ...variables, COMPANY_NAME, CURRENT_YEAR, SUPPORT_EMAIL };
+    const COMPANY_LOGO = setting.logo ? `${ENV.IMAGE_URL}/logos/${setting.logo}` : "";
+    variables = { ...variables, COMPANY_NAME, CURRENT_YEAR, SUPPORT_EMAIL, COMPANY_LOGO };
     if (!template) {
       throw new Error(`Template not found: ${identifier}`);
     }
