@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { ProductModel, CategoryModel, BannerModel, SettingModel, CMSModel } from "../models/index.js";
 import { ENV } from "../config/env.js";
 
@@ -48,7 +49,16 @@ router.get("/products", async (req, res) => {
       filter.name = { $regex: search, $options: "i" };
     }
     if (category) {
-      filter.category = category;
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        filter.category = category;
+      } else {
+        const cat = await CategoryModel.findOne({ slug: category });
+        if (cat) {
+          filter.category = cat._id;
+        } else {
+          filter.category = new mongoose.Types.ObjectId();
+        }
+      }
     }
     if (minPrice || maxPrice) {
       filter.offerPrice = {};
