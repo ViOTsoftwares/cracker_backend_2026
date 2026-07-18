@@ -102,6 +102,7 @@ router.get("/product/:id", adminAuthMiddleware, ProductCrt.OneProduct);
 
 // order
 router.get("/orders", adminAuthMiddleware, OrderCrt.getAllOrdersAdmin);
+router.get("/orders/export-all", adminAuthMiddleware, OrderCrt.exportOrdersAdmin);
 router.put("/orders/:id/status", adminAuthMiddleware, OrderCrt.updateOrderStatusAdmin);
 
 // CMS

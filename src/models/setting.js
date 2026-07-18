@@ -71,6 +71,12 @@ const SettingSchema = new Schema(
       default: 0,
       required: false,
     },
+    deliveryFeeType: {
+      type: String,
+      default: "free",
+      enum: ["free", "fixed", "percentage"],
+      required: false,
+    },
   },
   {
     timestamps: true,

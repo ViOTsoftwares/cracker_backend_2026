@@ -266,3 +266,51 @@ export const updateOrderStatusAdmin = async (req, res) => {
     return res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
+
+// GET /api/admin/orders/export-all (Admin only)
+export const exportOrdersAdmin = async (req, res) => {
+  try {
+    let { filter } = req.query;
+    
+    if (filter) {
+      filter = ColumnFilter(filter);
+
+      if (filter && filter.orderId) {
+        filter.orderId = { $regex: filter.orderId, $options: "i" };
+      }
+
+      if (filter && filter.customer) {
+        const userQuery = filter.customer; 
+        const matchedUsers = await UserModel.find({ name: userQuery }).select("_id");
+        const userIds = matchedUsers.map((u) => u._id);
+        filter.user = { $in: userIds };
+        delete filter.customer;
+      }
+
+      if (filter && filter.createdAt) {
+        const targetDate = new Date(filter.createdAt);
+        if (!isNaN(targetDate.getTime())) {
+          const startDate = new Date(targetDate);
+          startDate.setHours(0, 0, 0, 0);
+          const endDate = new Date(targetDate);
+          endDate.setHours(23, 59, 59, 999);
+          filter.createdAt = { $gte: startDate, $lte: endDate };
+        }
+      }
+    }
+
+    const list = await OrderModel.find(filter || {})
+      .populate("user", "name email phone")
+      .populate("items.product", "name")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      message: "Get all orders for export",
+      result: list,
+    });
+  } catch (error) {
+    console.error("exportOrdersAdmin error:", error);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
