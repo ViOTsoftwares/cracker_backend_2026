@@ -4,11 +4,16 @@ import { connectDB } from "./src/config/DB.js";
 import { ENV } from "./src/config/env.js";
 import { seedCMSPages } from "./src/config/seedCms.js";
 
+import http from "http";
+import { initSocket } from "./src/config/socket.js";
+
 const PORT = ENV.PORT;
+const server = http.createServer(app);
+initSocket(server);
 
 connectDB().then(async () => {
   await seedCMSPages();
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 });

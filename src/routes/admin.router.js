@@ -13,6 +13,7 @@ import * as EmailTemplateCrt from "../controllers/emailTemplate.js";
 import * as CategoryCrt from "../controllers/category.js";
 import * as BannerCrt from "../controllers/banner.js";
 import * as OrderCrt from "../controllers/order.js";
+import * as NotificationCrt from "../controllers/notification.js";
 
 import { uploadLogo, uploadProduct, uploadCategory, uploadProfileImage, uploadBanner } from "../lib/multer.js";
 
@@ -183,5 +184,9 @@ router.get(
   adminAuthMiddleware,
   BannerCrt.OneBanner,
 );
+
+// Notifications
+router.get("/notifications", adminAuthMiddleware, NotificationCrt.getNotifications);
+router.put("/notifications/:id/read", adminAuthMiddleware, NotificationCrt.markAsRead);
 
 export default router;

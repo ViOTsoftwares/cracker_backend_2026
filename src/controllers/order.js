@@ -1,4 +1,5 @@
-import { OrderModel, ProductModel, CategoryModel, UserModel, EmailTemplateModel, SettingModel } from "../models/index.js";
+import { OrderModel, ProductModel, CategoryModel, UserModel, EmailTemplateModel, SettingModel, NotificationModel } from "../models/index.js";
+import { getIO } from "../config/socket.js";
 import { Pagination } from "../lib/pagination.js";
 import { ColumnFilter } from "../lib/columnFilter.js";
 import { renderEmailTemplate } from "../lib/mailTemplate.js";
@@ -126,6 +127,24 @@ export const createOrder = async (req, res) => {
       console.error("Order template email sending failed:", emailError);
     }
 
+    // 4. Create Notification & Emit Web Socket Event
+    try {
+      const notification = await NotificationModel.create({
+        title: "New Order Received",
+        message: `Order ${orderId} has been placed for ₹${total.toLocaleString("en-IN")}.`,
+        type: "new_order",
+        data: { orderId: order._id },
+      });
+
+      const io = getIO();
+      io.to("admin_room").emit("new_order", {
+        notification,
+        orderId,
+      });
+    } catch (wsError) {
+      console.error("Failed to emit new order websocket event:", wsError);
+    }
+
     return res.status(201).json({
       success: true,
       message: "Order placed successfully! 🎆",
@@ -240,7 +259,7 @@ export const getAllOrdersAdmin = async (req, res) => {
 export const updateOrderStatusAdmin = async (req, res) => {
   try {
     const { id } = req.params;
-    const { orderStatus, paymentStatus } = req.body;
+    const { orderStatus, paymentStatus, isRead } = req.body;
 
     const order = await OrderModel.findById(id);
     if (!order) {
@@ -252,6 +271,9 @@ export const updateOrderStatusAdmin = async (req, res) => {
     }
     if (paymentStatus) {
       order.paymentStatus = paymentStatus;
+    }
+    if (isRead !== undefined) {
+      order.isRead = isRead;
     }
 
     await order.save();

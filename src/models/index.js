@@ -11,6 +11,7 @@ import ProductModel from "./product.js";
 import BannerModel from "./banner.js";
 import UserModel from "./user.js";
 import OrderModel from "./order.js";
+import { NotificationModel } from "./notification.js";
 
 export {
   BlogModel,
@@ -26,4 +27,5 @@ export {
   BannerModel,
   UserModel,
   OrderModel,
+  NotificationModel,
 };
