@@ -133,26 +133,36 @@ export const verifyOTP = async (req, res) => {
 // POST /api/user/auth/google
 export const googleLogin = async (req, res) => {
   try {
-    const { idToken } = req.body;
-    if (!idToken) {
-      return res.status(400).json({ success: false, message: "Google ID token is required" });
+    const { idToken, accessToken } = req.body;
+    if (!idToken && !accessToken) {
+      return res.status(400).json({ success: false, message: "Google token is required" });
     }
 
     // Verify token with Google's API
     let payload;
     try {
-      const googleResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
-      if (!googleResponse.ok) {
-        throw new Error("Google tokeninfo endpoint returned error");
+      if (idToken) {
+        const googleResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+        if (!googleResponse.ok) {
+          throw new Error("Google id_token verification failed");
+        }
+        payload = await googleResponse.json();
+      } else if (accessToken) {
+        const googleResponse = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (!googleResponse.ok) {
+          throw new Error("Google access_token verification failed");
+        }
+        payload = await googleResponse.json();
       }
-      payload = await googleResponse.json();
     } catch (verifyErr) {
       console.error("Google token verification failed:", verifyErr);
       return res.status(400).json({ success: false, message: "Invalid Google token" });
     }
 
-    // Validate client ID if not in testing/mock mode
-    if (ENV.GOOGLE_CLIENT_ID && !ENV.GOOGLE_CLIENT_ID.startsWith("mock-")) {
+    // Validate client ID if not in testing/mock mode (only for idToken flow)
+    if (idToken && ENV.GOOGLE_CLIENT_ID && !ENV.GOOGLE_CLIENT_ID.startsWith("mock-")) {
       if (payload.aud !== ENV.GOOGLE_CLIENT_ID) {
         return res.status(400).json({ success: false, message: "Google client ID mismatch" });
       }
