@@ -36,3 +36,32 @@ export const getIO = () => {
   }
   return io;
 };
+
+/**
+ * Emit an event to a specific room or client
+ * @param {string} room - The room name or socket ID to emit to
+ * @param {string} event - The name of the event
+ * @param {any} data - The payload to send
+ */
+export const emitOne = (room, event, data) => {
+  try {
+    const ioInstance = getIO();
+    ioInstance.to(room).emit(event, data);
+  } catch (error) {
+    console.error(`[Socket Error] Failed to emit event '${event}' to '${room}':`, error);
+  }
+};
+
+/**
+ * Emit an event to all connected clients globally
+ * @param {string} event - The name of the event
+ * @param {any} data - The payload to send
+ */
+export const emitAll = (event, data) => {
+  try {
+    const ioInstance = getIO();
+    ioInstance.emit(event, data);
+  } catch (error) {
+    console.error(`[Socket Error] Failed to emit event '${event}' globally:`, error);
+  }
+};

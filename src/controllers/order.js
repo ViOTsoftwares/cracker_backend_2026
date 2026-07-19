@@ -1,5 +1,5 @@
 import { OrderModel, ProductModel, CategoryModel, UserModel, EmailTemplateModel, SettingModel, NotificationModel } from "../models/index.js";
-import { getIO } from "../config/socket.js";
+import { emitOne } from "../config/socket.js";
 import { Pagination } from "../lib/pagination.js";
 import { ColumnFilter } from "../lib/columnFilter.js";
 import { renderEmailTemplate } from "../lib/mailTemplate.js";
@@ -136,8 +136,7 @@ export const createOrder = async (req, res) => {
         data: { orderId: order._id },
       });
 
-      const io = getIO();
-      io.to("admin_room").emit("new_order", {
+      emitOne("admin_room", "new_order", {
         notification,
         orderId,
       });

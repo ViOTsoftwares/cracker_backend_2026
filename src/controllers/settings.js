@@ -35,6 +35,7 @@ export const UpdateSetting = async (req, res) => {
       facebooklink,
       deliveryFee,
       deliveryFeeType,
+      footerShopLinks,
     } = req.body;
 
     const errors = {};
@@ -98,6 +99,16 @@ export const UpdateSetting = async (req, res) => {
     const file = req.file;
     const logo = file ? file.filename : getFilenameOnly(existingSetting?.logo) || "";
 
+    // Parse footerShopLinks if provided
+    let parsedFooterShopLinks = existingSetting?.footerShopLinks || [];
+    if (footerShopLinks) {
+      try {
+        parsedFooterShopLinks = typeof footerShopLinks === "string" ? JSON.parse(footerShopLinks) : footerShopLinks;
+      } catch (err) {
+        console.error("Failed to parse footerShopLinks", err);
+      }
+    }
+
     // 4️⃣ Update DB
     if (existingSetting?._id) {
       await SettingModel.updateOne(
@@ -116,6 +127,7 @@ export const UpdateSetting = async (req, res) => {
           facebooklink,
           deliveryFee: Number(deliveryFee) || 0,
           deliveryFeeType: deliveryFeeType || "free",
+          footerShopLinks: parsedFooterShopLinks,
         },
       );
     } else {
@@ -133,6 +145,7 @@ export const UpdateSetting = async (req, res) => {
         facebooklink,
         deliveryFee: Number(deliveryFee) || 0,
         deliveryFeeType: deliveryFeeType || "free",
+        footerShopLinks: parsedFooterShopLinks,
       });
     }
 

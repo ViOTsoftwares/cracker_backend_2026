@@ -77,6 +77,12 @@ const SettingSchema = new Schema(
       enum: ["free", "fixed", "percentage"],
       required: false,
     },
+    footerShopLinks: [
+      {
+        label: { type: String, required: true },
+        link: { type: String, required: true },
+      },
+    ],
   },
   {
     timestamps: true,

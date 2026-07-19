@@ -48,7 +48,7 @@ router.get("/products", async (req, res) => {
     if (search) {
       filter.name = { $regex: search, $options: "i" };
     }
-    if (category) {
+    if (category && category.toLowerCase() !== "all") {
       if (mongoose.Types.ObjectId.isValid(category)) {
         filter.category = category;
       } else {
