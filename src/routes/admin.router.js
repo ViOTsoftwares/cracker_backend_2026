@@ -14,6 +14,7 @@ import * as CategoryCrt from "../controllers/category.js";
 import * as BannerCrt from "../controllers/banner.js";
 import * as OrderCrt from "../controllers/order.js";
 import * as NotificationCrt from "../controllers/notification.js";
+import * as UserCrt from "../controllers/user.js";
 
 import { uploadLogo, uploadProduct, uploadCategory, uploadProfileImage, uploadBanner } from "../lib/multer.js";
 
@@ -188,5 +189,9 @@ router.get(
 // Notifications
 router.get("/notifications", adminAuthMiddleware, NotificationCrt.getNotifications);
 router.put("/notifications/:id/read", adminAuthMiddleware, NotificationCrt.markAsRead);
+
+// Users
+router.get("/users", adminAuthMiddleware, UserCrt.UserListAdmin);
+router.get("/users/:id", adminAuthMiddleware, UserCrt.OneUserAdmin);
 
 export default router;

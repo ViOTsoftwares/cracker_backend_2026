@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import { UserModel } from "../models/index.js";
 import { getFilenameOnly, deleteFile } from "../lib/imageHelper.js";
+import { Pagination } from "../lib/pagination.js";
+import { ColumnFilter } from "../lib/columnFilter.js";
 
 // GET /api/user/profile
 export const getProfile = async (req, res) => {
@@ -193,6 +195,49 @@ export const deleteAddress = async (req, res) => {
     });
   } catch (error) {
     console.error("deleteAddress error:", error);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
+
+export const UserListAdmin = async (req, res) => {
+  try {
+    let { page, limit, filter } = req.query;
+    const baseFilter = ColumnFilter(filter);
+    const sort = { createdAt: -1 };
+    const { skip } = Pagination({ page, limit });
+
+    const list = await UserModel.find(baseFilter)
+      .limit(limit)
+      .skip(skip)
+      .sort(sort);
+
+    const count = await UserModel.countDocuments(baseFilter);
+
+    return res.status(200).json({
+      success: true,
+      message: "Get all users",
+      result: { list, count },
+    });
+  } catch (error) {
+    console.error("UserListAdmin error:", error);
+    return res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+};
+
+export const OneUserAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await UserModel.findById(id);
+    if (!result) {
+      return res.status(404).json({ success: false, message: "Not found" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Get user details",
+      result,
+    });
+  } catch (error) {
+    console.error("OneUserAdmin error:", error);
     return res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };

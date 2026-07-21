@@ -6,6 +6,9 @@ import {
   AdminModel,
   BlogModel,
   SettingModel,
+  UserModel,
+  ProductModel,
+  OrderModel,
 } from "../models/index.js";
 import { ENV } from "../config/env.js";
 import { getFilenameOnly, deleteFile } from "../lib/imageHelper.js";
@@ -130,7 +133,9 @@ export const adminLogout = (req, res) => {
 export const getAllDataCounts = async (req, res) => {
   try {
     const result = {};
-    result.blog = await BlogModel.countDocuments();
+    result.user = await UserModel.countDocuments();
+    result.product = await ProductModel.countDocuments();
+    result.order = await OrderModel.countDocuments();
 
     return res.status(200).json({
       success: true,
