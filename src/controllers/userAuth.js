@@ -42,31 +42,13 @@ export const sendOTP = async (req, res) => {
     console.log(`[OTP] Generated OTP ${otp} for ${emailNormalized}`);
 
     // Try sending email via DB template
-    try {
-      await renderEmailTemplate("OTP_VERIFICATION", emailNormalized, {
-        USER_NAME: user.name || "Customer",
-        OTP_CODE: otp,
-        EXPIRY_MINUTES: 10,
-      });
-    } catch (templateError) {
-      console.warn("DB Email template rendering failed. Sending fallback OTP email.", templateError);
-      
-      // Fallback direct email
-      const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded: 12px;">
-          <h2 style="color: #0f172a; border-bottom: 2px solid #f97316; padding-bottom: 10px;">Verification Code</h2>
-          <p>Hello,</p>
-          <p>Your one-time verification code (OTP) for logging into your account is:</p>
-          <div style="font-size: 28px; font-weight: bold; letter-spacing: 4px; text-align: center; margin: 30px 0; color: #f97316; background-color: #fff7ed; padding: 15px; border-radius: 8px;">
-            ${otp}
-          </div>
-          <p>This code is valid for <strong>10 minutes</strong>. If you did not request this code, please ignore this email.</p>
-          <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #6b7280; text-align: center;">This is an automated system email.</p>
-        </div>
-      `;
-      await sendEmail(emailNormalized, "Your Login Verification Code", htmlContent);
-    }
+
+    await renderEmailTemplate("OTP_VERIFICATION", emailNormalized, {
+      USER_NAME: user.name || "Customer",
+      OTP_CODE: otp,
+      EXPIRY_MINUTES: 10,
+    });
+
 
     return res.status(200).json({
       success: true,

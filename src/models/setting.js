@@ -46,6 +46,11 @@ const SettingSchema = new Schema(
       default: "",
       required: true,
     },
+    favicon: {
+      type: String,
+      default: "default-favicon.png",
+      required: false,
+    },
     xlink: {
       type: String,
       default: "",

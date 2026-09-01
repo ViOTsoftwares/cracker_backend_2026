@@ -82,7 +82,10 @@ export const UpdateSetting = async (req, res) => {
     // 1️⃣ Find existing setting
     const existingSetting = await SettingModel.findOne();
 
-    if (!req.file && isEmpty(existingSetting?.logo)) {
+    const logoFile = req.files?.logo?.[0] || req.file;
+    const faviconFile = req.files?.favicon?.[0];
+
+    if (!logoFile && isEmpty(existingSetting?.logo)) {
       return res.status(400).json({
         success: false,
         message: "Logo is required",
@@ -91,13 +94,16 @@ export const UpdateSetting = async (req, res) => {
     }
 
     // 2️⃣ Delete old image if exists
-    if (req.file && existingSetting?.logo) {
+    if (logoFile && existingSetting?.logo) {
       deleteFile(existingSetting.logo, "logos");
+    }
+    if (faviconFile && existingSetting?.favicon && existingSetting.favicon !== "default-favicon.png") {
+      deleteFile(existingSetting.favicon, "logos");
     }
 
     // 3️⃣ Save new image
-    const file = req.file;
-    const logo = file ? file.filename : getFilenameOnly(existingSetting?.logo) || "";
+    const logo = logoFile ? logoFile.filename : getFilenameOnly(existingSetting?.logo) || "";
+    const favicon = faviconFile ? faviconFile.filename : getFilenameOnly(existingSetting?.favicon) || "default-favicon.png";
 
     // Parse footerShopLinks if provided
     let parsedFooterShopLinks = existingSetting?.footerShopLinks || [];
@@ -121,6 +127,7 @@ export const UpdateSetting = async (req, res) => {
           phone,
           email,
           logo,
+          favicon,
           linkedinlink,
           xlink,
           instagramlink,
@@ -139,6 +146,7 @@ export const UpdateSetting = async (req, res) => {
         phone,
         email,
         logo,
+        favicon,
         linkedinlink,
         xlink,
         instagramlink,

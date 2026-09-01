@@ -50,7 +50,10 @@ router
   .get(adminAuthMiddleware, SettingCrt.GetSetting)
   .post(
     adminAuthMiddleware,
-    uploadLogo.single("logo"),
+    uploadLogo.fields([
+      { name: "logo", maxCount: 1 },
+      { name: "favicon", maxCount: 1 },
+    ]),
     SettingCrt.UpdateSetting,
   );
 
